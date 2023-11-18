@@ -2954,6 +2954,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	ts->input_dev->open = sec_ts_input_open;
 	ts->input_dev->close = sec_ts_input_close;
 #endif
+	ts->input_closed = 1;
 
 	ret = input_register_device(ts->input_dev);
 	if (ret) {
@@ -3889,11 +3890,18 @@ static int fb_notifier_callback(struct notifier_block *self,
 			/* Enable FOD when screen on or in AOD. */
 			if (!ts->fod_enabled && ts->plat_data->support_fod)
 				ts->lowpower_mode |= SEC_TS_MODE_SPONGE_PRESS;
+			/* Swap input status, as there is no case where
+			 * a new FB event is notified but no input status
+			 * change is needed.
+			 */
+			ts->input_closed ? sec_ts_input_open(ts->input_dev) : sec_ts_input_close(ts->input_dev);
 			break;
 		case FB_BLANK_POWERDOWN:
 			/* Disable FOD when screen off. */
 			if (!ts->fod_enabled && ts->plat_data->support_fod)
 				ts->lowpower_mode &= ~SEC_TS_MODE_SPONGE_PRESS;
+			/* Set input to close status. */
+			sec_ts_input_close(ts->input_dev);
 			break;
 		default:
 			/* Don't handle what we don't understand. */
