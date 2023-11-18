@@ -5577,10 +5577,13 @@ static void fod_enable(void *device_data)
 		return;
 	}
 
-	if (sec->cmd_param[0])
+	if (sec->cmd_param[0]) {
 		ts->lowpower_mode |= SEC_TS_MODE_SPONGE_PRESS;
-	else
+		ts->fod_enabled = 1;
+	} else {
 		ts->lowpower_mode &= ~SEC_TS_MODE_SPONGE_PRESS;
+		ts->fod_enabled = 0;
+	}
 
 	input_info(true, &ts->client->dev, "%s: %s, %02X\n",
 			__func__, sec->cmd_param[0] ? "on" : "off", ts->lowpower_mode);

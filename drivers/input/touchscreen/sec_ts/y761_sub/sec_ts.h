@@ -690,6 +690,7 @@ struct sec_ts_data {
 	u8 external_noise_mode;
 	volatile u8 touch_noise_status;
 	volatile bool input_closed;
+	bool fod_enabled;
 	long prox_power_off;
 	bool rear_selfie_mode;
 

@@ -3870,21 +3870,47 @@ static int fb_notifier_callback(struct notifier_block *self,
 				void *data)
 {
 	struct fb_event *evdata = data;
+	struct sec_ts_data *ts = container_of(self, struct sec_ts_data, fb_notif);
 
 	// Only run for internal screen (fb0)
 	if (evdata && evdata->info->node != 0) return 0;
 
 	if (evdata && evdata->data && event == FB_EVENT_BLANK) {
 		int *blank = evdata->data;
+
+		u8 data[3] = { 0 };
+		int ret;
+
 		switch (*blank) {
 		case FB_BLANK_UNBLANK:
 		case FB_BLANK_NORMAL:
 		case FB_BLANK_VSYNC_SUSPEND:
 		case FB_BLANK_HSYNC_SUSPEND:
-		case FB_BLANK_POWERDOWN:
-		default:
-			/* Don't handle what we don't understand */
+			/* Enable FOD when screen on or in AOD. */
+			if (!ts->fod_enabled && ts->plat_data->support_fod)
+				ts->lowpower_mode |= SEC_TS_MODE_SPONGE_PRESS;
 			break;
+		case FB_BLANK_POWERDOWN:
+			/* Disable FOD when screen off. */
+			if (!ts->fod_enabled && ts->plat_data->support_fod)
+				ts->lowpower_mode &= ~SEC_TS_MODE_SPONGE_PRESS;
+			break;
+		default:
+			/* Don't handle what we don't understand. */
+			break;
+		}
+
+		/* Write FOD enable/disable status to sponge. */
+		if (!ts->fod_enabled && ts->plat_data->support_fod) {
+			input_err(true, &ts->client->dev, "%s: Sponge (0x%02x)%s\n",
+					__func__, ts->lowpower_mode,
+					ts->input_closed ? "" : ", force fod enable");
+
+			data[2] = ts->lowpower_mode;
+
+			ret = ts->sec_ts_write_sponge(ts, data, 3);
+			if (ret < 0)
+				input_err(true, &ts->client->dev, "%s: Failed to write sponge\n", __func__);
 		}
 	}
 
