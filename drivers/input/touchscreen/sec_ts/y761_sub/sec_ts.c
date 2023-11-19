@@ -2628,11 +2628,10 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	ts->input_dev->name = "sec_touchscreen2";
 	sec_ts_set_input_prop(ts, ts->input_dev, INPUT_PROP_DIRECT);
 #ifdef USE_OPEN_CLOSE
-	ts->input_dev->open = sec_ts_input_open;
-	ts->input_dev->close = sec_ts_input_close;
+	//ts->input_dev->open = sec_ts_input_open;
+	//ts->input_dev->close = sec_ts_input_close;
 #endif
 	ts->input_dev_touch = ts->input_dev;
-	ts->input_closed = 1;
 
 	ret = input_register_device(ts->input_dev);
 	if (ret) {
